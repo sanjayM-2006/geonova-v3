@@ -402,5 +402,93 @@ input[type=range]::-webkit-slider-runnable-track {
 
 #extraGeology {
   font-family: 'Outfit', sans-serif;
-  font-weight: 300;
+}
+
+/* ==================== RESPONSIVE DESIGN / MEDIA QUERIES ==================== */
+
+/* Tablets & Small Laptops */
+@media screen and (max-width: 1024px) {
+  .sidebar {
+    width: 380px;
+  }
+}
+
+/* Mobile Devices */
+@media screen and (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    border-left: none;
+    padding-top: 70px;
+  }
+  
+  .toggle-btn {
+    top: 16px;
+    right: 16px;
+    padding: 10px 16px;
+    font-size: 0.8rem;
+  }
+
+  #mapCompass {
+    transform: scale(0.8);
+    transform-origin: bottom left;
+    left: 10px;
+    bottom: 15px; /* Stay just above standard iOS safety area */
+  }
+
+  #planetIntelOverlay {
+    width: calc(100% - 32px) !important;
+    right: 16px !important;
+    top: 70px !important; /* Push below toggle btn */
+  }
+  
+  #returnToEarthBtn {
+    width: 90% !important;
+    font-size: 1.1rem !important;
+    padding: 14px 20px !important;
+  }
+}
+
+/* Small Phones */
+@media screen and (max-width: 480px) {
+  .action-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .btn-primary {
+    font-size: 0.8rem;
+    padding: 10px;
+  }
+  
+  .accordion-header {
+    font-size: 0.8rem;
+    padding: 12px 16px;
+  }
+
+  .sidebar-content {
+    padding: 0 16px 40px 16px;
+  }
+  
+  #planetIntelOverlay h2 {
+    font-size: 1.2rem !important;
+  }
+  
+  #geoMetricsGrid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .loader-text {
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+  }
+  
+  .detail-box {
+    font-size: 0.75rem;
+  }
+  
+  /* Reset view btn adjustment so it doesn't clip off mapCompass on scale */
+  #resetViewBtn {
+    top: -10px;
+    right: -10px;
+  }
 }

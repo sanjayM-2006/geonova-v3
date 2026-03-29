@@ -2,6 +2,35 @@
 const geoCache = new Map(); // Global Spatial Cache
 let searchMarker = null;    // Global Search Pin
 
+// --- Toast System ---
+function toast(msg, type = 'info') {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    Object.assign(container.style, {
+      position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)',
+      zIndex: '9999', display: 'flex', flexDirection: 'column', gap: '10px'
+    });
+    document.body.appendChild(container);
+  }
+  const el = document.createElement('div');
+  const bg = type === 'error' ? 'rgba(239, 68, 68, 0.9)' : 'rgba(15, 23, 42, 0.9)';
+  const border = type === 'error' ? '#f87171' : '#38bdf8';
+  Object.assign(el.style, {
+    background: bg, backdropFilter: 'blur(8px)', border: `1px solid ${border}`,
+    color: '#fff', padding: '10px 20px', borderRadius: '30px', fontFamily: '"Inter", sans-serif',
+    fontSize: '0.85rem', boxShadow: '0 4px 12px rgba(0,0,0,0.5)', opacity: '0', transition: 'opacity 0.3s'
+  });
+  el.innerHTML = msg;
+  container.appendChild(el);
+  requestAnimationFrame(() => el.style.opacity = '1');
+  setTimeout(() => {
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 300);
+  }, 3000);
+}
+
 // --- Accordion Logic ---
 document.querySelectorAll('.accordion-header').forEach(btn => {
   btn.onclick = () => {
@@ -538,7 +567,7 @@ document.getElementById('searchBtn').onclick = async () => {
     const data = await res.json();
     if(data.length) {
       const lat = parseFloat(data[0].lat); const lng = parseFloat(data[0].lon);
-      map.flyTo({ center: [lng, lat], zoom: 12 });
+      map.flyTo({ center: [lng, lat], zoom: 12, pitch: typeof terrainActive !== 'undefined' && terrainActive ? 60 : 0 });
       
       // Pin dropping
       if(searchMarker) searchMarker.remove();
@@ -609,18 +638,6 @@ document.getElementById('earthquakeBtn').onclick = async function() {
   } else { document.getElementById('eqSliderContainer').style.display = 'none'; }
 };
 
-// Search / Geocode
-document.getElementById('searchBtn').onclick = async () => {
-  const val = document.getElementById('searchBox').value.trim();
-  if (!val) return;
-  toast(`Teleporting to ${val}...`);
-  try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=1`);
-    const data = await res.json();
-    if(data.length) map.flyTo({ center: [parseFloat(data[0].lon), parseFloat(data[0].lat)], zoom: 12, pitch: terrainActive ? 60 : 0 });
-    else toast("Location invalid.");
-  } catch { toast("Navigation Array Offline."); }
-};
 
 // PDF Report
 document.getElementById('pdfBtn').onclick = function() {
