@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>GeoNova V3 | Pro Geospatial Engine</title>
+
+  <!-- MapLibre GL JS -->
+  <link href="https://unpkg.com/maplibre-gl@5.0.0/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@5.0.0/dist/maplibre-gl.js"></script>
+
+  <!-- Mapbox GL Draw & Turf.js -->
+  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css"
+    type="text/css" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js"></script>
+  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+
+  <!-- Export Libs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- Three.js for Solar System -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- Icons & Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- Cinematic Loader -->
+  <div id="loader">
+    <div class="loader-spinner"></div>
+    <div class="loader-text">GEONOVA DEPLOYING</div>
+  </div>
+
+  <div class="app">
+
+    <!-- Solar System Container (Three.js) -->
+    <div id="spaceLayer" class="engine-active" style="background:#000;">
+      <button id="returnToEarthBtn" class="btn-primary"
+        style="position:absolute; bottom:40px; left:50%; transform:translateX(-50%); z-index:2100; width:auto; padding:16px 32px; font-size:1.2rem; box-shadow: 0 4px 25px rgba(14,165,233,0.6); border:2px solid #38bdf8; border-radius:40px; background:linear-gradient(135deg, #0ea5e9, #0284c7);">
+        <i class="fas fa-globe-americas"></i> Descend to Earth Surface
+      </button>
+
+      <!-- Planetary Intel Scanner Overlay -->
+      <div id="planetIntelOverlay"
+        style="display:none; position:absolute; top:20px; right:20px; width:350px; background:rgba(15,23,42,0.85); backdrop-filter:blur(16px); border:1px solid #38bdf8; border-radius:12px; z-index:2200; padding:20px; color:white; font-family:'Inter', sans-serif; box-shadow:0 10px 30px rgba(0,0,0,0.8);">
+        <div
+          style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; margin-bottom:15px;">
+          <h2 id="planetTitle"
+            style="margin:0; font-size:1.5rem; text-transform:uppercase; color:#38bdf8; letter-spacing:2px;">Planet Name
+          </h2>
+          <button id="closeIntelBtn"
+            style="background:none; border:none; color:#f87171; cursor:pointer; font-size:1.2rem; outline:none;"><i
+              class="fas fa-times"></i></button>
+        </div>
+        <div style="font-size:0.9rem; line-height:1.6; color:#e2e8f0;">
+          <p><strong><i class="fas fa-layer-group"></i> Core:</strong> <span id="planetComp"></span></p>
+          <p><strong><i class="fas fa-gem"></i> Minerals:</strong> <span id="planetMinerals"></span></p>
+          <p><strong><i class="fas fa-industry"></i> Resources:</strong> <span id="planetResources"></span></p>
+          <p><strong><i class="fas fa-moon"></i> Natural Satellites:</strong> <span id="planetMoons"></span></p>
+          <p style="margin-top:15px; font-style:italic; color:#94a3b8;" id="planetDesc"></p>
+        </div>
+      </div>
+
+    </div>
+
+    <div id="mapLayer" class="engine-sleep">
+      <div id="map"></div>
+      <div id="mapCompass">
+        <div class="compass-dial">
+          <div class="compass-ring"></div>
+          <div class="compass-marker n">N</div>
+          <div class="compass-marker e">E</div>
+          <div class="compass-marker s">S</div>
+          <div class="compass-marker w">W</div>
+          <div class="compass-ticks"></div>
+        </div>
+        <div class="compass-needle"></div>
+        <div class="compass-telemetry">
+          <div class="tel-item"><i class="fas fa-compass"></i> <span id="telHeading">000°</span></div>
+          <div class="tel-divider"></div>
+          <div class="tel-item"><i class="fas fa-mountain"></i> <span id="telDip">00°</span></div>
+        </div>
+        <button id="resetViewBtn" title="Reset View to North (Level Earth)"><i class="fas fa-arrows-to-circle"></i></button>
+      </div>
+    </div>
+
+    <div class="toggle-btn" id="toggleSidebarBtn" style="display:none;">
+      <i class="fas fa-satellite-dish"></i> <span>Command Center</span> <i class="fas fa-chevron-right"
+        id="toggleIcon"></i>
+    </div>
+
+    <div class="sidebar" id="sidebar" style="display:none;">
+      <div class="sidebar-content">
+
+        <!-- Accordion 6: Interstellar -->
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div style="display:flex; align-items:center;"><i class="fas fa-meteor icon-head"></i> INTERSTELLAR</div>
+            <i class="fas fa-chevron-down chevron"></i>
+          </div>
+          <div class="accordion-content">
+            <button id="launchSpaceBtn" class="btn-primary"
+              style="background:linear-gradient(135deg, #7c3aed, #4f46e5); font-size:1rem; padding:16px;">
+              <i class="fas fa-space-shuttle"></i> Launch to Solar System
+            </button>
+            <div style="font-size:0.75rem; color:#9ca3af; margin-top:8px; text-align:center;">Initiates 3D Engine. Map
+              rotation will pause.</div>
+          </div>
+        </div>
+
+        <!-- Accordion 1: Location Intelligence -->
+        <div class="accordion-item active">
+          <div class="accordion-header">
+            <div style="display:flex; align-items:center;"><i class="fas fa-compass icon-head"></i> LOCATION ALCHEMIST
+            </div>
+            <i class="fas fa-chevron-down chevron"></i>
+          </div>
+          <div class="accordion-content">
+            <div class="search-group">
+              <input type="text" id="searchBox" class="search-input" placeholder="Jump to coordinates or address..."
+                autocomplete="off" spellcheck="false" />
+              <button class="btn-primary" id="searchBtn"><i class="fas fa-rocket"></i> Teleport to Sector</button>
+              <button class="btn-primary" id="tourBtn"
+                style="margin-top:8px; background:linear-gradient(135deg, #f59e0b, #d97706);"><i
+                  class="fas fa-video"></i> Start Cinematic Tour</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Accordion 2: Basemaps & Views -->
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div style="display:flex; align-items:center;"><i class="fas fa-layer-group icon-head"></i> BASEMAPS &
+              TOPOGRAPHY</div>
+            <i class="fas fa-chevron-down chevron"></i>
+          </div>
+          <div class="accordion-content">
+            <div class="action-grid" style="margin-bottom:12px;">
+              <button id="hybridBtn" class="action-btn active"><i class="fas fa-map"></i> Hybrid Ops</button>
+              <button id="satelliteBtn" class="action-btn"><i class="fas fa-satellite"></i> True Color</button>
+              <button id="osmBtn" class="action-btn"><i class="fas fa-road"></i> Street Matrix</button>
+              <button id="clearBasemapBtn" class="action-btn" style="border-color:#94a3b8;"><i class="fas fa-eye-slash"></i> Clear View</button>
+            </div>
+            <button id="terrainBtn" class="btn-primary" style="background:#1e293b; border:1px solid #f59e0b;"><i
+                class="fas fa-mountain"></i> Enable 3D Terrain shading</button>
+          </div>
+        </div>
+
+        <!-- Accordion 3: Environmental Intel -->
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div style="display:flex; align-items:center;"><i class="fas fa-globe-europe icon-head"></i> ENVIRONMENTAL
+              INTEL</div>
+            <i class="fas fa-chevron-down chevron"></i>
+          </div>
+          <div class="accordion-content">
+            <div class="action-grid">
+              <button id="issBtn" class="action-btn" style="border-color:#38bdf8;"><i class="fas fa-space-shuttle"></i>
+                Live ISS Tracker</button>
+              <button id="radarBtn" class="action-btn" style="border-color:#ef4444;"><i
+                  class="fas fa-cloud-showers-heavy"></i> Live Radar (WMS)</button>
+              <button id="trafficBtn" class="action-btn"><i class="fas fa-car-side"></i> Global Traffic</button>
+              <button id="landcoverBtn" class="action-btn"><i class="fas fa-tree"></i> ESA Land Cover</button>
+              <button id="faultLineBtn" class="action-btn"><i class="fas fa-wave-square"></i> Tectonic Plates</button>
+              <button id="earthquakeBtn" class="action-btn"><i class="fas fa-bullseye"></i> 30D Earthquakes</button>
+              <button id="weatherBtn" class="action-btn"><i class="fas fa-temperature-high"></i> Local Climate</button>
+              <button id="poiBtn" class="action-btn"><i class="fas fa-map-pin"></i> Neighborhood POIs</button>
+              <button id="usgsMapBtn" class="action-btn" style="border-color:#10b981; grid-column: span 1;"><i class="fas fa-mountain"></i> USGS Geology</button>
+              <button id="usgsFaultBtn" class="action-btn" style="border-color:#f43f5e; grid-column: span 1;"><i class="fas fa-bolt"></i> USGS Faults</button>
+            </div>
+
+            <!-- Earthquake time slider -->
+            <div id="eqSliderContainer" class="slider-container" style="display:none;">
+              <div class="slider-labels"><span>-30 Days</span> <span id="eqDateLabel">Now</span></div>
+              <input type="range" id="eqSlider" class="slider" min="0" max="30" step="1" value="30">
+            </div>
+          </div>
+        </div>
+
+        <!-- Accordion 4: Analysis Tools & Routing -->
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div style="display:flex; align-items:center;"><i class="fas fa-toolbox icon-head"></i> ANALYSIS & TOOLS
+            </div>
+            <i class="fas fa-chevron-down chevron"></i>
+          </div>
+          <div class="accordion-content">
+            <div class="action-grid">
+              <button id="drawBtn" class="action-btn"><i class="fas fa-drafting-compass"></i> Measurement Kit</button>
+              <button id="routeBtn" class="action-btn"><i class="fas fa-route"></i> OSRM Routing</button>
+              <button id="pdfBtn" class="action-btn" style="grid-column: span 2; background:#065f46; color:white;"><i
+                  class="fas fa-file-pdf"></i> Generate PDF Dossier</button>
+            </div>
+
+            <div id="routingPanel" class="detail-box" style="display:none;">
+              <span style="color:#fcd34d;"><i class="fas fa-info-circle"></i> Click to plot route waypoints.</span>
+              <div id="routeResult" style="margin-top:5px; font-weight:600; color:#fff;"></div>
+            </div>
+            <div id="drawingPanel" class="detail-box"
+              style="display:none; background:rgba(239,68,68,0.1); border-color:rgba(239,68,68,0.3);">
+              <button id="clearDrawBtn" class="btn-primary" style="background:#ef4444;"><i class="fas fa-trash-alt"></i>
+                Clear Canvas & Metrics</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Accordion 5: Geology Readout -->
+        <div class="accordion-item">
+          <div class="accordion-header">
+            <div style="display:flex; align-items:center;"><i class="fas fa-vial icon-head"></i> SURFACE METRICS</div>
+            <i class="fas fa-chevron-down chevron"></i>
+          </div>
+          <div class="accordion-content" style="padding-top:0;">
+            <div class="detail-box">
+              <div style="display: flex; gap: 8px; margin-bottom: 8px; color: #94a3b8;"><i class="fas fa-hand-pointer"></i><span>Right-click to pitch 3D. Left-click for insights.</span></div>
+              <div id="dynamicDetails" style="margin: 10px 0; font-size: 0.85rem;">Awaiting geophysical survey...</div>
+              
+              <div id="geoMetricsGrid" style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; font-size:0.8rem;">
+                <div class="badge" style="width:100%;"><i class="fas fa-location-crosshairs"></i> <span id="latLonVal">Sector: 0, 0</span></div>
+                <div class="badge" style="width:100%; border-left-color:#38bdf8;"><i class="fas fa-mountain"></i> <span id="elevVal">MSL: N/A</span></div>
+              </div>
+
+              <div id="rockTypeDisplay" class="badge" style="width:100%; margin-bottom:8px; display:block; border-left-width: 4px;"><i class="fas fa-gem"></i> Null data</div>
+              <div id="locDisplay" class="badge" style="width:100%; margin-bottom:8px; display:block; border-left-color:#10b981;"><i class="fas fa-map-pin"></i> Location: Unknown</div>
+              
+              <div id="geologyData" style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.75rem; color: #cbd5e1; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                <div><i class="fas fa-vial"></i> <strong>USGS Unit:</strong> <span id="usgsUnitVal">N/A</span></div>
+                <div><i class="fas fa-hourglass-half"></i> <strong>Age/Era:</strong> <span id="ageVal">N/A</span></div>
+                <div style="grid-column: span 2;"><i class="fas fa-database"></i> <strong>Minerals:</strong> <span id="mineralVal" style="color:#fcd34d;">Scanning...</span></div>
+                <div style="grid-column: span 2; opacity: 0.6;"><i class="fas fa-microchip"></i> <strong>MSI Profile:</strong> <span id="msiVal">Awaiting probe...</span></div>
+              </div>
+
+              <div id="extraGeology" style="margin-top: 12px; color:#94a3b8; font-size:0.8rem; font-style: italic;"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
